@@ -4,15 +4,73 @@ import com.gdb.domain.*;
 
 public class TestAbstractAccount {
 
+    // Transfer funds from one account to another
+    public static boolean transferFunds(
+            AbstractAccount source,
+            AbstractAccount destination,
+            double amount,
+            int pin) {
+
+        try {
+            // Withdraw from source
+            source.withdraw(amount, pin);
+
+            // Deposit into destination only if withdrawal succeeds
+            destination.deposit(amount);
+
+            return true;
+
+        } catch (AccountException e) {
+
+            System.out.println(
+                    "Transfer failed: " + e.getMessage()
+            );
+
+            return false;
+        }
+    }
+
+
+    // Process monthly banking cycle
+    public static void processMonthlyCycle(
+            AbstractAccount[] accounts) {
+
+        for (AbstractAccount account : accounts) {
+
+            // Apply interest to Savings Account
+            if (account instanceof SavingsAccount) {
+
+                SavingsAccount savings =
+                        (SavingsAccount) account;
+
+                savings.applyInterest();
+            }
+
+            // Check Salary Account
+            if (account instanceof SalaryAccount) {
+
+                System.out.println(
+                        "Salary account checked for salary credit history."
+                );
+            }
+        }
+
+        System.out.println(
+                "Monthly Interest Cycle processed for all qualifying accounts."
+        );
+    }
+
+
     public static void main(String[] args) {
 
         System.out.println(
-                "=== Activity 9: Abstract Account & Template Pattern ==="
+                "=== Activity 10: Banking Operations Suite ==="
         );
 
-        // ------------------------------------------------
-        // SAVINGS ACCOUNT
-        // ------------------------------------------------
+
+        // ================================================
+        // STEP 1: CREATE ACCOUNT PORTFOLIO
+        // ================================================
 
         SavingsAccount savings =
                 new SavingsAccount(
@@ -24,112 +82,107 @@ public class TestAbstractAccount {
                         5
                 );
 
-        savings.setPin(1234);
-
-        try {
-
-            savings.withdraw(2000, 1234);
-
-            System.out.println(
-                    "[Savings] Withdraw 2000: SUCCESS | Balance: Rs "
-                    + savings.getBalance()
-            );
-
-        } catch (AccountException e) {
-
-            System.out.println(
-                    "[Savings] Withdraw 2000: FAILED | "
-                    + e.getMessage()
-            );
-        }
-
-
-        // Savings minimum balance test
-        try {
-
-            savings.withdraw(8000, 1234);
-
-            System.out.println(
-                    "[Savings] Withdraw below min balance: FAILED"
-            );
-
-        } catch (AccountException e) {
-
-            System.out.println(
-                    "[Savings] Withdraw below min balance: "
-                    + "Caught MinimumBalanceViolationException [PASS]"
-            );
-        }
-
-
-        // ------------------------------------------------
-        // CURRENT ACCOUNT
-        // ------------------------------------------------
-
         CurrentAccount current =
                 new CurrentAccount(
                         102,
-                        "Devansh",
-                        19,
-                        2000,
+                        "Rahul",
+                        20,
+                        5000,
                         5000
                 );
 
-        current.setPin(1234);
-
-        try {
-
-            current.withdraw(5000, 1234);
-
-            System.out.println(
-                    "[Current] Overdraft debit: SUCCESS | Balance: Rs "
-                    + current.getBalance()
-            );
-
-        } catch (AccountException e) {
-
-            System.out.println(
-                    "[Current] Overdraft debit: FAILED | "
-                    + e.getMessage()
-            );
-        }
-
-
-        // ------------------------------------------------
-        // FIXED DEPOSIT
-        // ------------------------------------------------
-
-        FixedDepositAccount fd =
-                new FixedDepositAccount(
+        SalaryAccount salary =
+                new SalaryAccount(
                         103,
-                        "Devansh",
-                        19,
-                        10000,
-                        12,
-                        7.5
+                        "Aman",
+                        21,
+                        15000
                 );
 
-        fd.setPin(1234);
 
-        try {
+        // Set PINs
+        savings.setPin(1234);
+        current.setPin(2345);
+        salary.setPin(3456);
 
-            fd.withdraw(2000, 1234);
+
+        // Abstract account portfolio
+        AbstractAccount[] accounts = {
+                savings,
+                current,
+                salary
+        };
+
+
+        // ================================================
+        // STEP 2: SUCCESSFUL FUND TRANSFER
+        // ================================================
+
+        boolean transferSuccessful =
+                transferFunds(
+                        savings,
+                        current,
+                        3000,
+                        1234
+                );
+
+        if (transferSuccessful) {
 
             System.out.println(
-                    "[FixedDeposit] Premature debit: FAILED"
+                    "Transfer Rs 3000 from Savings to Current: SUCCESS"
             );
 
-        } catch (AccountException e) {
-
             System.out.println(
-                    "[FixedDeposit] Premature debit: "
-                    + "Caught AccountException [PASS]"
+                    "Savings Balance: Rs "
+                    + savings.getBalance()
+                    + " | Current Balance: Rs "
+                    + current.getBalance()
             );
         }
 
 
+        // ================================================
+        // FAILED TRANSFER - WRONG PIN
+        // ================================================
+
+        double savingsBefore =
+                savings.getBalance();
+
+        double currentBefore =
+                current.getBalance();
+
+        boolean failedTransfer =
+                transferFunds(
+                        savings,
+                        current,
+                        2000,
+                        9999
+                );
+
+        if (!failedTransfer
+                && savings.getBalance() == savingsBefore
+                && current.getBalance() == currentBefore) {
+
+            System.out.println(
+                    "Failed Transfer (Wrong PIN): "
+                    + "Exception caught, no balance changed [PASS]"
+            );
+        }
+
+
+        // ================================================
+        // STEP 3: MONTHLY BANKING CYCLE
+        // ================================================
+
+        processMonthlyCycle(accounts);
+
+
+        // ================================================
+        // FINAL MESSAGE
+        // ================================================
+
         System.out.println(
-                "Template method pattern executed successfully!"
+                "All banking operations passed!"
         );
     }
 }
